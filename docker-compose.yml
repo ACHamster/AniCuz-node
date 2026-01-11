@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: nest_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - "${DATABASE_PORT}:5432" # 将容器 5432 映射到宿主机的 5432
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data # 数据持久化到本地目录
+
+volumes:
+  pgdata:
