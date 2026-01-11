@@ -22,4 +22,5 @@ model User {
   username String @unique
   avatar String?
   point Int @default(0)
+  createdAt DateTime @default(now())
 }
