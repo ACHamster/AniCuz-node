@@ -16,4 +16,31 @@ export class UserService {
       },
     });
   }
+
+  async findUserByLogin(identifier: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        OR: [{ username: identifier }, { email: identifier }],
+      },
+    });
+  }
+
+  async findConflicts(username: string | undefined, email: string | undefined) {
+    return this.prisma.user.findMany({
+      where: {
+        OR: [
+          {
+            username,
+          },
+          {
+            email,
+          },
+        ],
+      },
+      select: {
+        username: true,
+        email: true,
+      },
+    });
+  }
 }

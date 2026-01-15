@@ -3,35 +3,23 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma } from '../../../generated/prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import { Prisma, User } from '../../../generated/prisma/client';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
     private userService: UserService,
+    private jwtService: JwtService,
   ) {}
 
   async register(data: Prisma.UserCreateInput) {
-    const existingUsers = await this.prisma.user.findMany({
-      where: {
-        OR: [
-          {
-            username: data.username,
-          },
-          {
-            email: data.email,
-          },
-        ],
-      },
-      select: {
-        username: true,
-        email: true,
-      },
-    });
+    const existingUsers = await this.userService.findConflicts(
+      data.username,
+      data.email,
+    );
 
     if (existingUsers.length > 0) {
       const errorMessages: string[] = [];
@@ -54,22 +42,29 @@ export class AuthService {
     });
   }
 
-  async signIn(username: string, password: string) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        username: username,
-      },
-      select: {
-        password: true,
-      },
-    });
+  async validateUser(identifier: string, password: string) {
+    const user = await this.userService.findUserByLogin(identifier);
     if (!user) {
       throw new UnauthorizedException('用户名或密码错误');
     }
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (isPasswordCorrect) {
-      return isPasswordCorrect;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...result } = user;
+      return result;
     }
-    throw new UnauthorizedException('用户名或密码错误');
+    return null;
+  }
+
+  async login(user: User) {
+    const payload = { username: user.username, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        username: user.username,
+        avatar: user?.avatar,
+      },
+    };
   }
 }
