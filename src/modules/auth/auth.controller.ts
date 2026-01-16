@@ -5,7 +5,9 @@ import {
   UseGuards,
   Request,
   Get,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { Prisma } from '../../../generated/prisma/client';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { AuthService } from './auth.service';
@@ -25,13 +27,20 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@GetUser() user) {
-    return this.AuthService.login(user);
+  async login(@Request() req, @Res({ passthrough: true }) res: Response) {
+    const { access_token, userInfo } = await this.AuthService.login(req.user);
+    res.cookie('access_token', access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60,
+    });
+    return userInfo;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@GetUser() user) {
-    return user;
+  getProfile(@Request() req) {
+    return req.user;
   }
 }
