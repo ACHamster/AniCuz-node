@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '../../../generated/prisma/client';
+import { CreateRefreshTokenData } from '../auth/auth.type';
 
 @Injectable()
 export class UserService {
@@ -40,6 +41,19 @@ export class UserService {
       select: {
         username: true,
         email: true,
+      },
+    });
+  }
+
+  async createRefreshToken(data: CreateRefreshTokenData) {
+    return this.prisma.refreshToken.create({
+      data: {
+        tokenHash: data.tokenHash,
+        deviceIp: data.deviceIp,
+        userAgent: data.userAgent,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        userId: data.userId,
+        isRevoked: false,
       },
     });
   }

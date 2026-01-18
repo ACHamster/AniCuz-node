@@ -5,6 +5,7 @@ import { Strategy } from 'passport-jwt';
 // import { Strategy } from 'passport-local';
 import { jwtConfig } from '../../config/jwt.config';
 import { Request } from 'express';
+import { JwtPayload } from './auth.type';
 
 const extractJwtFromCookie = (req: Request) => {
   let token = null;
@@ -27,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: { username: string; sub: string }) {
+  validate(payload: JwtPayload) {
     return { userId: payload.sub, username: payload.username };
   }
 }
