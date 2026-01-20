@@ -1,4 +1,5 @@
 import { IsEmail, IsString, IsOptional, MinLength } from 'class-validator';
+import { Request } from 'express';
 
 // ==================== DTOs (Data Transfer Objects) ====================
 
@@ -57,6 +58,9 @@ export interface JwtPayload {
 export interface DeviceInfo {
   ip?: string;
   ua?: string; // user-agent
+  browser?: string;
+  os?: string;
+  device?: string;
 }
 
 // ==================== Response Types ====================
@@ -111,10 +115,8 @@ export interface AuthenticatedUser {
 /**
  * 扩展的 Express Request 类型，用于认证后的请求
  */
-export interface AuthenticatedRequest {
+export interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
-  ip?: string;
-  headers: Record<string, string | string[] | undefined>;
 }
 
 /**
@@ -125,4 +127,7 @@ export interface CreateRefreshTokenData {
   tokenHash: string;
   deviceIp?: string;
   userAgent?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
 }

@@ -39,7 +39,6 @@ export class AuthService {
       if (existingUsers.some((u) => u.email === data.email)) {
         errorMessages.push('邮箱已被注册');
       }
-      console.log(existingUsers);
       if (errorMessages.length > 0) {
         throw new ConflictException(errorMessages.join('且'));
       }
@@ -95,12 +94,15 @@ export class AuthService {
     deviceInfo: DeviceInfo,
   ): Promise<string> {
     const refreshTokenUUID = randomUUID();
-    const hashedRefreshToken = await bcrypt.hash(refreshTokenUUID, 4);
+    const hashedRefreshToken = await bcrypt.hash(refreshTokenUUID, 10);
     const refreshToken = await this.userService.createRefreshToken({
       userId,
       tokenHash: hashedRefreshToken,
       deviceIp: deviceInfo.ip,
       userAgent: deviceInfo.ua,
+      device: deviceInfo.device,
+      os: deviceInfo.os,
+      browser: deviceInfo.browser,
     });
     return `${refreshToken.id}.${refreshTokenUUID}`;
   }
@@ -112,7 +114,7 @@ export class AuthService {
   async refreshToken(rawToken: string, deviceInfo: DeviceInfo) {
     const [idStr, plainUUID] = rawToken.split('.');
     const tokenId = parseInt(idStr, 10);
-
+    // 判定旧token有效性
     if (isNaN(tokenId) || !plainUUID) {
       throw new UnauthorizedException('Invalid token format');
     }
@@ -141,6 +143,9 @@ export class AuthService {
         throw new UnauthorizedException('Security alert: Token reuse detected');
       }
     }
+    if (oldToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Token已过期');
+    }
     const isMatch = await bcrypt.compare(plainUUID, oldToken.tokenHash);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid token signature');
@@ -153,9 +158,29 @@ export class AuthService {
       oldToken.userId,
       deviceInfo,
     );
+
+    // 撤销旧token，延迟5秒
+    await this.prisma.refreshToken.update({
+      where: { id: tokenId },
+      data: {
+        isRevoked: true,
+        revokeAt: new Date(Date.now() + 5000),
+      },
+    });
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
     };
+  }
+
+  async logoutAll(userId: number) {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: userId },
+      data: {
+        isRevoked: true,
+        revokeAt: new Date(),
+      },
+    });
+    return { message: '已登出所有设备' };
   }
 }

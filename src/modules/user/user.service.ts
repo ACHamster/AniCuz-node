@@ -51,6 +51,7 @@ export class UserService {
         tokenHash: data.tokenHash,
         deviceIp: data.deviceIp,
         userAgent: data.userAgent,
+        device: data.device,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         userId: data.userId,
         isRevoked: false,

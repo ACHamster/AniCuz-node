@@ -18,11 +18,16 @@ datasource db {
 model User {
   id Int @id @default(autoincrement())
   email String @unique
-  password String
+
   username String @unique
   avatar String?
   point Int @default(0)
+  status UserStatus @default(ACTIVE)
+
+  password String
   refreshTokens RefreshToken[]
+  articles Article[]
+
   createdAt DateTime @default(now())
 }
 
@@ -31,15 +36,80 @@ model RefreshToken {
   tokenHash String @unique
   // 关联用户
   userId Int
-  user User @relation(fields: [id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   // 设备信息
   deviceIp String?
   userAgent String?
+  os String?
+  broswer String?
+  device String?
   // 状态
   isRevoked Boolean @default(false)
   expiresAt DateTime
   revokeAt DateTime?
 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Article {
+  id Int @id @default(autoincrement())
+
+  // 关联作者
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content Json
+  cover String
+  title String
+  description String
+
+
+  // 计数字段
+  viewCount Int @default(0)
+  likeCount Int @default(0)
+
+  boardId Int?
+  board Board? @relation(fields: [boardId], references: [id])
+  tags Tag[]
+  status ArticleStatus @default(PUBLISHED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([title, description])
+  @@index([createdAt])
+}
+
+model Tag {
+  id Int @id @default(autoincrement())
+  name String @unique
+  articles Article[]
+}
+
+model Board {
+  id Int @id @default(autoincrement())
+  name String @unique
+  description String?
+  // url别名
+  slug String @unique
+  icon String
+
+  articles Article[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  PENDING
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  BANNED
 }
