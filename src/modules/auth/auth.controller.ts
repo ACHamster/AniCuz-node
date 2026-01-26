@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Response, Request as ExpressRequest } from 'express';
-import { IResult, UAParser } from 'ua-parser-js';
+import { IResult } from 'ua-parser-js';
 import { Prisma } from '../../../generated/prisma/client';
 import { UserAgent } from '../../common/decorators/useragent.decorator';
 import { getClientIp } from '../../utils/utils';
