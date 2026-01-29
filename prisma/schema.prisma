@@ -28,6 +28,7 @@ model User {
   refreshTokens RefreshToken[]
   articles Article[]
   likes ArticleLike[]
+  uploads Upload[]
 
   createdAt DateTime @default(now())
 }
@@ -112,6 +113,29 @@ model ArticleLike {
 
   @@id([articleId, userId])
 }
+
+model Upload {
+  id String @id @default(uuid())
+
+  filename String
+  mimeType String
+  size Int
+
+  key String
+  url String
+
+  uploaderId Int
+  uploader User @relation(fields: [uploaderId], references: [id])
+
+  hash String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  @@index([hash])
+  @@index([uploaderId])
+}
+
 
 enum UserStatus {
   ACTIVE

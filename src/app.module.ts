@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ArticleModule } from './modules/article/article.module';
+import { OssModule } from './modules/oss/oss.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ArticleModule } from './modules/article/article.module';
     UserModule,
     AuthModule,
     ArticleModule,
+    OssModule,
   ],
   controllers: [AppController],
   providers: [AppService],
