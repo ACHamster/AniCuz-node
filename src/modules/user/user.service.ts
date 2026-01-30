@@ -18,6 +18,15 @@ export class UserService {
     });
   }
 
+  async findUserByIdWithRole(id: number) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        role: true,
+      },
+    });
+  }
+
   async findUserByLogin(identifier: string) {
     return this.prisma.user.findFirst({
       where: {
@@ -55,6 +64,38 @@ export class UserService {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         userId: data.userId,
         isRevoked: false,
+      },
+    });
+  }
+
+  async getUserPermissions(userId: number) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: {
+          select: {
+            permissions: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateUserRole(userId: number, roleId: string | null) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { roleId },
+      include: {
+        role: true,
+      },
+    });
+  }
+
+  async findUserById(userId: number) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: true,
       },
     });
   }

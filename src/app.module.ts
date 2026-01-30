@@ -7,6 +7,7 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ArticleModule } from './modules/article/article.module';
 import { OssModule } from './modules/oss/oss.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { OssModule } from './modules/oss/oss.module';
     AuthModule,
     ArticleModule,
     OssModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

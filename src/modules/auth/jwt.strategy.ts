@@ -6,6 +6,7 @@ import { Strategy } from 'passport-jwt';
 import { jwtConfig } from '../../config/jwt.config';
 import { Request } from 'express';
 import { JwtPayload } from './auth.type';
+import { UserService } from '../user/user.service';
 
 const extractJwtFromCookie = (req: Request) => {
   let token = null;
@@ -20,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(jwtConfig.KEY)
     private config: ConfigType<typeof jwtConfig>,
+    private userService: UserService,
   ) {
     super({
       jwtFromRequest: extractJwtFromCookie,
@@ -28,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload) {
-    return { id: payload.sub, username: payload.username };
+  async validate(payload: JwtPayload) {
+    return await this.userService.findUserByIdWithRole(payload.sub);
   }
 }

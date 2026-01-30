@@ -23,6 +23,11 @@ model User {
   avatar String?
   point Int @default(0)
   status UserStatus @default(ACTIVE)
+  exp Int @default(0)
+  level Int @default(0)
+
+  roleId String?
+  role Role? @relation(fields: [roleId], references: [id])
 
   password String
   refreshTokens RefreshToken[]
@@ -31,6 +36,31 @@ model User {
   uploads Upload[]
 
   createdAt DateTime @default(now())
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // "admin", "user", "moderator"
+  description String?
+  isDefault   Boolean  @default(false) // 新注册用户是否默认使用此角色
+
+  // 权限格式为资源:动作 (Resource:Action)
+  // 例如 ["article:create", "user:ban"]
+  permissions Json     @default("[]")
+
+  users       User[]
+}
+
+model LevelRule {
+  level       Int      @id
+  threshold   Int      // 升级所需最小经验值，如 Lv1=100, Lv2=500
+
+  // 存储该等级特权的配置对象
+  // 例如: { "uploadLimit": 5242880, "checkInBonus": 20, "canBuyDecorations": true }
+  perks       Json     @default("{}")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model RefreshToken {
@@ -135,6 +165,7 @@ model Upload {
   @@index([hash])
   @@index([uploaderId])
 }
+
 
 
 enum UserStatus {

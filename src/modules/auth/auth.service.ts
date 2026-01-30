@@ -45,9 +45,13 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 8);
+    const defaultRole = await this.prisma.role.findFirst({
+      where: { isDefault: true },
+    });
     return this.userService.createUser({
       ...data,
       password: hashedPassword,
+      role: { connect: { id: defaultRole!.id } },
     });
   }
 
