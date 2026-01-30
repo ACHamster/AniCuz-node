@@ -10,6 +10,8 @@ import {
   Query,
   Delete,
 } from '@nestjs/common';
+import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../common/permissions.guard';
 import { AuthenticatedRequest } from '../auth/auth.type';
 import {
   CreateArticleDto,
@@ -19,13 +21,15 @@ import {
 } from './article.dto';
 import { ArticleService } from './article.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('article')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
 
   @Post('create')
-  @UseGuards(JwtAuthGuard)
+  @RequirePermissions('article:create')
   async create(
     @Body() createArticleDto: CreateArticleDto,
     @Request() res: AuthenticatedRequest,
@@ -34,7 +38,6 @@ export class ArticleController {
   }
 
   @Post('edit/:id')
-  @UseGuards(JwtAuthGuard)
   async edit(
     @Param('id', ParseIntPipe) id: number,
     @Body() editArticleDto: EditArticleDto,
@@ -43,17 +46,18 @@ export class ArticleController {
     return this.articleService.editArticle(res.user.id, id, editArticleDto);
   }
 
+  @Public()
   @Get()
   async getList(@Query() query: GetArticleListDto) {
     return this.articleService.getArticleList(query);
   }
 
+  @Public()
   @Get(':id')
   async getDetail(@Param('id', ParseIntPipe) id: number) {
     return this.articleService.getArticleById(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('like/:id')
   async likeArticle(
     @Param('id', ParseIntPipe) articleId: number,
@@ -62,7 +66,6 @@ export class ArticleController {
     return this.articleService.toggleLike(articleId, res.user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMyArticles(
     @Query() query: GetArticleListDto,
@@ -71,7 +74,6 @@ export class ArticleController {
     return this.articleService.getMyArticles(res.user.id, query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post(':id/status')
   async updateArticleStatus(
     @Param('id', ParseIntPipe) articleId: number,
@@ -81,7 +83,6 @@ export class ArticleController {
     return this.articleService.updateArticleStatus(res.user.id, articleId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deleteArticle(
     @Param('id', ParseIntPipe) articleId: number,
