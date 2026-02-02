@@ -150,6 +150,33 @@ async function main() {
   });
 
   console.log(`ADMIN user created: ${adminUser.email} / password123`);
+
+  await prisma.taskRule.upsert({
+    where: { code: 'article:publish' },
+    update: {},
+    create: {
+      code: 'article:publish',
+      name: '每日发帖',
+      description: '每天发布新帖子获得积分',
+      reward: 20, // 每次给10分
+      limit: 3, // 每天最多领3次
+      type: 'DAILY',
+    },
+  });
+
+  // 2. 创建“每日签到”任务 (通常配合登录接口)
+  await prisma.taskRule.upsert({
+    where: { code: 'daily:signin' },
+    update: {},
+    create: {
+      code: 'daily:signin',
+      name: '每日登录',
+      description: '每天登录即可获得奖励',
+      reward: 5,
+      limit: 1,
+      type: 'DAILY',
+    },
+  });
   console.log('✅ Seeding finished.');
 }
 

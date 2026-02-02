@@ -4,8 +4,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateRolePermissionsDto, UpdateUserRoleDto } from './admin.dto';
+import {
+  UpdateRolePermissionsDto,
+  UpdateUserRoleDto,
+  AdjustUserPointDto,
+} from './admin.dto';
 import { PERMISSIONS_DEFINITIONS } from '../../common/constants/permissions';
+import { CreateItemDto, UpdateItemDto } from '../store/store.dto';
 
 @Injectable()
 export class AdminService {
@@ -172,5 +177,97 @@ export class AdminService {
         },
       },
     });
+  }
+
+  // ============ 商品管理 ============
+
+  async createItem(dto: CreateItemDto) {
+    return this.prisma.item.create({
+      data: {
+        name: dto.name,
+        description: dto.description,
+        image: dto.image,
+        price: dto.price,
+        type: dto.type,
+        isOnSale: dto.isOnSale ?? true,
+      },
+    });
+  }
+
+  async updateItem(itemId: string, dto: UpdateItemDto) {
+    // 检查商品是否存在
+    const item = await this.prisma.item.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!item) {
+      throw new NotFoundException('商品不存在');
+    }
+
+    return this.prisma.item.update({
+      where: { id: itemId },
+      data: dto,
+    });
+  }
+
+  async deleteItem(itemId: string) {
+    // 检查商品是否存在
+    const item = await this.prisma.item.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!item) {
+      throw new NotFoundException('商品不存在');
+    }
+
+    // 删除商品（注意：如果有用户已购买，可能需要特殊处理）
+    return this.prisma.item.delete({
+      where: { id: itemId },
+    });
+  }
+
+  // ============ 积分管理 ============
+
+  async adjustUserPoint(userId: number, dto: AdjustUserPointDto) {
+    // 检查用户是否存在
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, point: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    // 使用事务：更新积分 + 写入日志
+    const result = await this.prisma.$transaction(async (prisma) => {
+      // 更新用户积分
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          point: {
+            increment: dto.amount,
+          },
+        },
+        select: {
+          id: true,
+          username: true,
+          point: true,
+        },
+      });
+
+      // 写入积分日志
+      await prisma.pointLog.create({
+        data: {
+          userId,
+          amount: dto.amount,
+          reason: `管理员操作: ${dto.reason}`,
+        },
+      });
+
+      return updatedUser;
+    });
+
+    return result;
   }
 }

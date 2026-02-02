@@ -34,6 +34,10 @@ model User {
   articles Article[]
   likes ArticleLike[]
   uploads Upload[]
+  items UserItem[]
+  pointLogs PointLog[]
+  taskProgress UserTaskProgress[]
+
 
   createdAt DateTime @default(now())
 }
@@ -166,6 +170,86 @@ model Upload {
   @@index([uploaderId])
 }
 
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  image       String   // 图片 URL
+  price       Int      // 价格 (积分)
+
+  type        ItemType
+
+  isOnSale    Boolean  @default(true) // 是否上架
+
+  // 关联
+  userItems   UserItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PointLog {
+  id        String   @id @default(uuid())
+
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id])
+
+  amount    Int
+  reason    String
+
+  createdAt DateTime @default(now())
+}
+
+model UserItem {
+  id        String   @id @default(uuid())
+
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id])
+
+  itemId    String
+  item      Item   @relation(fields: [itemId], references: [id])
+
+  isEquipped Boolean @default(false) // 关键：用户是否正在佩戴这个装饰品
+
+  acquiredAt DateTime @default(now())
+
+  @@unique([userId, itemId]) // 防止重复购买同一个永久物品
+}
+
+model TaskRule {
+  id          String   @id @default(uuid())
+  code        String   @unique // 任务标识符，例如: "daily_signin", "post_create"
+  name        String
+  description String?
+
+  reward      Int
+  limit       Int      @default(1) // 周期内最大完成次数 (例如每日限3次)
+
+  // 任务类型：DAILY (每日重置), ONE_TIME (一次性成就), WEEKLY (每周)
+  type        TaskType @default(DAILY)
+
+  isActive    Boolean  @default(true)
+
+  progresses  UserTaskProgress[]
+}
+
+model UserTaskProgress {
+  id          String   @id @default(uuid())
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+
+  taskRuleId  String
+  taskRule    TaskRule @relation(fields: [taskRuleId], references: [id])
+
+  count       Int      @default(0) // 当前周期内已完成次数
+  status      TaskStatus @default(IN_PROGRESS) // 进行中 / 已领取 / 已完成
+
+  lastUpdate  DateTime @default(now()) // 上次更新时间，用于判断是否跨天重置
+
+  @@unique([userId, taskRuleId])
+}
+
 
 
 enum UserStatus {
@@ -178,4 +262,21 @@ enum ArticleStatus {
   DRAFT
   PUBLISHED
   BANNED
+}
+
+enum ItemType {
+  BACKGROUND
+  FRAME
+  BADGE
+}
+
+enum TaskType {
+  DAILY
+  WEEKLY
+  ONE_TIME
+}
+
+enum TaskStatus {
+  IN_PROGRESS
+  COMPLETED
 }

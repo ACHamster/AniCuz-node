@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -15,7 +16,10 @@ import {
 
 @Injectable()
 export class ArticleService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async createArticle(userId: number, dto: CreateArticleDto) {
     const tagsConnect = dto.tags?.map((tagName) => ({
@@ -42,6 +46,8 @@ export class ArticleService {
         },
       }),
     };
+    this.eventEmitter.emit('article.created', { userId });
+
     return this.prisma.article.create({
       data: articleData,
       include: {
